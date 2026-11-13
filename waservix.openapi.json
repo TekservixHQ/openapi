@@ -1,0 +1,214 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "WAservix WhatsApp API Gateway",
+    "version": "1.0.0",
+    "description": "WAservix WhatsApp API Gateway by Tekservix: send WhatsApp messages, media, polls and locations from your own WhatsApp number through a REST API. Link the number by scanning a QR code, no Meta Business API approval. Pass your WAservix device key (wpk_...) as a Bearer token. Get a key with a 3-day free trial at https://tekservix.com/waservix (then a paid plan). Full docs: https://tekservix.com/waservix/docs",
+    "contact": {
+      "name": "Tekservix Team",
+      "email": "support@tekservix.com",
+      "url": "https://tekservix.com/waservix"
+    },
+    "x-logo": {
+      "url": "https://tekservix.com/assets/images/logo.png"
+    },
+    "x-providerName": "tekservix.com"
+  },
+  "servers": [
+    {
+      "url": "https://tekservix.com/waservix/api"
+    }
+  ],
+  "components": {
+    "parameters": {
+      "auth": {
+        "name": "Authorization",
+        "in": "header",
+        "required": true,
+        "description": "Bearer followed by your WAservix device key, e.g. Bearer wpk_your_device_key",
+        "schema": {
+          "type": "string",
+          "example": "Bearer wpk_your_device_key"
+        }
+      }
+    }
+  },
+  "paths": {
+    "/send-message": {
+      "post": {
+        "summary": "Send a WhatsApp message",
+        "description": "One endpoint for every message type: text, image, video, audio or voice note, document, sticker, contact card, location, poll, reply and mentions. Messages are queued and sent one at a time per number; the answer comes back at once with status in_progress.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/auth"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "to"
+                ],
+                "properties": {
+                  "to": {
+                    "type": "string",
+                    "description": "Phone number in international format, a group JID (...@g.us) or a channel JID"
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "Message text, or caption for media"
+                  },
+                  "imageUrl": {
+                    "type": "string"
+                  },
+                  "videoUrl": {
+                    "type": "string"
+                  },
+                  "audioUrl": {
+                    "type": "string"
+                  },
+                  "documentUrl": {
+                    "type": "string"
+                  },
+                  "fileName": {
+                    "type": "string"
+                  },
+                  "ptt": {
+                    "type": "boolean",
+                    "description": "Send audio as a voice note"
+                  },
+                  "replyTo": {
+                    "type": "string",
+                    "description": "msgId of a message to quote"
+                  }
+                }
+              },
+              "example": {
+                "to": "+447700900123",
+                "text": "Hi Sam, your order #1042 is ready for pickup."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Queued",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "msgId": 58213,
+                    "status": "in_progress"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/status": {
+      "get": {
+        "summary": "Get connection status",
+        "description": "Shows whether the WhatsApp number behind this key is linked and online.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/auth"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/messages/{id}/info": {
+      "get": {
+        "summary": "Get message status",
+        "description": "Delivery status of a sent message: queued, sent, delivered, read, played or failed, with timestamps.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/auth"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "58213"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/messages/{id}/resend": {
+      "post": {
+        "summary": "Resend a failed message",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/auth"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "58213"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/on-whatsapp/{phone}": {
+      "get": {
+        "summary": "Check if a number is on WhatsApp",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/auth"
+          },
+          {
+            "name": "phone",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "447700900123"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "data": {
+                    "exists": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

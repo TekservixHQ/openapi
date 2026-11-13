@@ -1,0 +1,327 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SMS Gora SMS Gateway",
+    "version": "1.0.0",
+    "description": "SMS Gora SMS Gateway by Tekservix: send and receive SMS through your own Android phone and SIM card with a REST API. Dual-SIM, scheduling, bulk sends, delivery reports and webhooks. Pass your SMS Gora key (sgk_...) in the x-api-key header. Get a key with a 3-day free trial, no card, at https://tekservix.com/smsgora (then a paid plan with unlimited SMS; your mobile operator charges the SIM as usual). Full docs: https://tekservix.com/smsgora/docs",
+    "contact": {
+      "name": "Tekservix Team",
+      "email": "support@tekservix.com",
+      "url": "https://tekservix.com/smsgora"
+    },
+    "x-logo": {
+      "url": "https://tekservix.com/assets/images/logo.png"
+    },
+    "x-providerName": "tekservix.com"
+  },
+  "servers": [
+    {
+      "url": "https://tekservix.com/smsgora/api/v1"
+    }
+  ],
+  "components": {
+    "parameters": {
+      "key": {
+        "name": "x-api-key",
+        "in": "header",
+        "required": true,
+        "description": "Your SMS Gora API key (starts with sgk_)",
+        "schema": {
+          "type": "string",
+          "example": "sgk_your_key"
+        }
+      },
+      "deviceId": {
+        "name": "deviceId",
+        "in": "path",
+        "required": true,
+        "description": "Phone ID shown on the phone card in the dashboard",
+        "schema": {
+          "type": "integer",
+          "example": 42
+        }
+      }
+    },
+    "schemas": {
+      "Send": {
+        "type": "object",
+        "required": [
+          "recipients",
+          "message"
+        ],
+        "properties": {
+          "recipients": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Phone numbers in international format (up to 1,000)"
+          },
+          "message": {
+            "type": "string",
+            "description": "Text, up to 1,600 characters"
+          },
+          "sim_slot": {
+            "type": "integer",
+            "description": "0 = SIM 1, 1 = SIM 2"
+          },
+          "schedule_at": {
+            "type": "string",
+            "description": "ISO 8601 time to send later"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/send-sms": {
+      "post": {
+        "summary": "Send SMS (auto-pick phone)",
+        "description": "Sends through your best available phone: online, sending on, covered by your plan, shortest queue.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/key"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Send"
+              },
+              "example": {
+                "recipients": [
+                  "+447700900123"
+                ],
+                "message": "Your verification code is 482913"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Queued",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "message": "SMS added to the queue",
+                  "data": {
+                    "message_ids": [
+                      1873
+                    ],
+                    "status": "queued"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/devices/{deviceId}/send-sms": {
+      "post": {
+        "summary": "Send SMS from a specific phone",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/key"
+          },
+          {
+            "$ref": "#/components/parameters/deviceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Send"
+              },
+              "example": {
+                "recipients": [
+                  "+447700900123",
+                  "+447700900456"
+                ],
+                "message": "Your appointment is tomorrow at 10:00."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Queued"
+          }
+        }
+      }
+    },
+    "/devices/{deviceId}/send-bulk-sms": {
+      "post": {
+        "summary": "Send bulk SMS",
+        "description": "Different texts for different people in one call (up to 5,000 recipients).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/key"
+          },
+          {
+            "$ref": "#/components/parameters/deviceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "messageTemplate": "Hello, your parcel is ready for pickup.",
+                "messages": [
+                  {
+                    "recipients": [
+                      "+447700900123"
+                    ],
+                    "message": "Hi Sam, parcel #1042 is ready."
+                  },
+                  {
+                    "recipients": [
+                      "+447700900456"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Queued"
+          }
+        }
+      }
+    },
+    "/devices": {
+      "get": {
+        "summary": "List phones",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/key"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/messages": {
+      "get": {
+        "summary": "List messages",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/key"
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "in",
+                "out"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "example": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/messages/{id}": {
+      "get": {
+        "summary": "Get one message",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/key"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1873
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/messages/{id}/cancel": {
+      "post": {
+        "summary": "Cancel a queued message",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/key"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1873
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/received-sms": {
+      "get": {
+        "summary": "List received SMS",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/key"
+          },
+          {
+            "name": "after_id",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  }
+}
